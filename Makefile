@@ -55,7 +55,18 @@ unixpath = $(subst \,/,$1)
 unixcygpath = /$(subst :,,$(call unixpath,$1))
 
 # Unix
-ifneq (,$(findstring unix,$(platform)))
+# PS5 (a homebrew title's libretro core): the console's libraries resolve at
+# load time, so no --no-undefined; no LTO; zstd without its trace hooks, weak
+# imports nothing on the console defines.
+ifeq ($(platform), ps5)
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--version-script=link.T
+   FLAGS += -DZSTD_TRACE=0
+   CFLAGS += -DZSTD_TRACE=0
+   CXXFLAGS += -DZSTD_TRACE=0
+   LTO =
+else ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
